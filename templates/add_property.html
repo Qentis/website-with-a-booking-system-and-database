@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="booking-card">
+
+    <h3>Добавить объект</h3>
+
+   <form method="POST" enctype="multipart/form-data">
+
+    <input name="name" class="form-control mb-2" placeholder="Название">
+    <input name="address" class="form-control mb-2" placeholder="Адрес">
+
+    <textarea name="description" class="form-control mb-2"></textarea>
+
+    <input name="price" class="form-control mb-2" placeholder="Цена">
+    <input name="capacity" class="form-control mb-2" placeholder="Гостей">
+
+    <select name="type" class="form-control mb-2">
+        <option value="hotel">Отель</option>
+        <option value="apartment">Апартаменты</option>
+        <option value="private">Дом</option>
+    </select>
+
+    <input type="file" name="image" class="form-control mb-3">
+
+    <button class="btn btn-light w-100">Создать</button>
+
+</form>
+
+</div>
+
+{% endblock %}

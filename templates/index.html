@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2 class="mb-4">Премиум жильё</h2>
+
+<div class="row g-4">
+
+    {% for unit in units %}
+    <div class="col-12 col-md-6 col-lg-4">
+
+        <div class="card dark-card h-100">
+
+            {% if unit.property and unit.property.image %}
+                <img src="{{ url_for('static', filename='uploads/' + unit.property.image) }}">
+            {% else %}
+                <img src="https://png.pngtree.com/png-vector/20221125/ourmid/pngtree-no-image-available-icon-flatvector-illustration-photography-no-photo-vector-png-image_40966498.jpg">
+            {% endif %}
+
+            <div class="p-3">
+
+                {% if unit.property %}
+                    <span class="badge bg-secondary">
+                        🏨 {{ unit.property.name }}
+                    </span>
+
+                    <p class="text-muted small">
+                        {{ unit.property.address }}
+                    </p>
+                {% else %}
+                    <span class="badge bg-dark">
+                        🏠 Без объекта
+                    </span>
+                {% endif %}
+
+                <h5 class="mt-2">{{ unit.title }}</h5>
+
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted small">
+                        до {{ unit.capacity }} гостей
+                    </span>
+
+                    <span class="price">
+                        {{ unit.price_per_night }}€
+                    </span>
+                </div>
+
+                {% if unit.bookings %}
+                <div class="booked-dates mt-2">
+                    <small class="text-danger">Занято:</small>
+                    <ul class="booking-list">
+                        {% for b in unit.bookings %}
+                            <li>{{ b.check_in }} → {{ b.check_out }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <a href="/book/{{ unit.id }}" class="btn btn-sm btn-light w-100 mt-3">
+                    Забронировать
+                </a>
+
+            </div>
+        </div>
+
+    </div>
+    {% endfor %}
+
+</div>
+
+{% endblock %}

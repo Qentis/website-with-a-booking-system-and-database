@@ -27,6 +27,8 @@ class Property(Base):
     name = Column(String(150), nullable=False)
     address = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
+    image = Column(String)
+    units = relationship("Unit", back_populates="property")
 
 # Номер / квартира
 class Unit(Base):
@@ -39,7 +41,7 @@ class Unit(Base):
     capacity = Column(Integer, nullable=False)
     price_per_night = Column(Integer, nullable=False)
 
-    property = relationship("Property", backref="units")
+    property = relationship("Property", back_populates="units")
 
 # Бронирование
 class Booking(Base):
@@ -60,35 +62,60 @@ class Booking(Base):
     unit = relationship("Unit", backref="bookings")
 
 
-SessionLocal = sessionmaker(bind=engine)
+SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 
 # функции
 
-def add_guest(name, surname, contact): # добавление гостя
+def add_guest(name, surname, contact):
     with SessionLocal() as session:
         try:
-            guest = Guest(name=name, surname=surname, contact=contact)
+            # 1. ищем существующего гостя
+            guest = session.query(Guest).filter_by(contact=contact).first()
+
+            if guest:
+                print("Гость уже существует")
+                return guest
+
+            # 2. создаём нового
+            guest = Guest(
+                name=name,
+                surname=surname,
+                contact=contact
+            )
+
             session.add(guest)
             session.commit()
-            print(f"Гость {name} добавлен.")
-        except IntegrityError:
-            session.rollback()
-            print("Ошибка: такой контакт уже существует.")
+            session.refresh(guest)
+
+            print("Гость создан")
+            return guest
+
         except Exception as e:
             session.rollback()
-            print(f"Ошибка: {e}")
+            print("ERROR:", e)
+            return None
 
-def add_property(name, address, description=""): # добавление апартоментов
+def add_property(name, address, description="", image=None):
     with SessionLocal() as session:
         try:
-            prop = Property(name=name, address=address, description=description)
+            prop = Property(
+                name=name,
+                address=address,
+                description=description,
+                image=image
+            )
             session.add(prop)
             session.commit()
+            session.refresh(prop)  
+
             print(f"Объект '{name}' добавлен.")
+            return prop            
+
         except Exception as e:
             session.rollback()
             print(f"Ошибка: {e}")
+            return None
 
 def add_unit(property_id, title, capacity, price_per_night): # добавление квартиры/апартоментов
     with SessionLocal() as session:

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel - Barbershop</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <h2 style="color: var(--accent);">Admin Dashboard</h2>
+        <div>
+            <span>Admin</span>
+            <a href="home.html" style="color: red;">Выйти</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2 class="animate-fade">Сводка на сегодня</h2>
+        <br>
+        <div class="dashboard-grid">
+            <div class="card animate-slide-up delay-1" style="border-left: 4px solid var(--accent);">
+                <h3>Всего записей</h3>
+                <h1 style="font-size: 3rem;">14</h1>
+            </div>
+            <div class="card animate-slide-up delay-2" style="border-left: 4px solid #4CAF50;">
+                <h3>Выручка (ожидаемая)</h3>
+                <h1 style="font-size: 3rem;">28 500 ₽</h1>
+            </div>
+        </div>
+
+        <h3 class="animate-fade delay-3" style="margin-top: 30px;">Последние бронирования</h3>
+        <div class="card animate-slide-up delay-3" style="margin-top: 15px;">
+            <p><strong>14:00</strong> - Иван (Стрижка) -> Мастер: Алексей</p>
+            <hr style="border-color: var(--border); margin: 10px 0;">
+            <p><strong>15:30</strong> - Сергей (Борода) -> Мастер: Дмитрий</p>
+        </div>
+    </div>
+</body>
+</html>

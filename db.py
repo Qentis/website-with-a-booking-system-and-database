@@ -1,93 +1,129 @@
-from datetime import datetime
-from sqlalchemy import create_engine , Column , Integer , DateTime , Text , String
-from sqlalchemy.orm import DeclarativeBase , sessionmaker, Session
+from datetime import datetime, date
+from sqlalchemy import create_engine, Column, Integer, DateTime, String, Text, ForeignKey, Date
+from sqlalchemy.orm import DeclarativeBase, sessionmaker, relationship
 from sqlalchemy.exc import IntegrityError
 
-engine = create_engine("sqlite:///BD.db", echo=True)
+
+engine = create_engine("sqlite:///booking.db", echo=True)
+
 
 class Base(DeclarativeBase):
     pass
 
-class User(Base):
-    __tablename__ = 'users'
+# гость
+class Guest(Base):
+    __tablename__ = "guests"
 
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
-    surname = Column (String(100), nullable=False)
-    fatherland = Column (String(100), nullable=False)
+    surname = Column(String(100), nullable=False)
     contact = Column(String(255), nullable=False, unique=True)
 
-class Master(Base):
-    __tablename__ = 'masters'
+# Отель или владелец апартаментов
+class Property(Base):
+    __tablename__ = "properties"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
-    surname = Column (String(100), nullable=False)
-    fatherland = Column (String(100), nullable=False)
-    bio = Column (Text, nullable=False)
+    name = Column(String(150), nullable=False)
+    address = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
 
-class Freedom_time(Base):
-    __tablename__ = 'freedom_time'
-    
-    id = Column (Integer, primary_key=True)
-    time = Column (DateTime, default=datetime.utcnow)
-    master = Column (Integer)
-    condition = Column (Integer)    
-    
-    
-    
+# Номер / квартира
+class Unit(Base):
+    __tablename__ = "units"
+
+    id = Column(Integer, primary_key=True)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
+
+    title = Column(String(150), nullable=False)
+    capacity = Column(Integer, nullable=False)
+    price_per_night = Column(Integer, nullable=False)
+
+    property = relationship("Property", backref="units")
+
+# Бронирование
+class Booking(Base):
+    __tablename__ = "bookings"
+
+    id = Column(Integer, primary_key=True)
+
+    guest_id = Column(Integer, ForeignKey("guests.id"), nullable=False)
+    unit_id = Column(Integer, ForeignKey("units.id"), nullable=False)
+
+    check_in = Column(Date, nullable=False)
+    check_out = Column(Date, nullable=False)
+
+    status = Column(String(50), default="pending") 
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    guest = relationship("Guest", backref="bookings")
+    unit = relationship("Unit", backref="bookings")
+
+
 SessionLocal = sessionmaker(bind=engine)
 
 
-def add_user(name, surname, fatherland, contact):
+# функции
+
+def add_guest(name, surname, contact): # добавление гостя
     with SessionLocal() as session:
         try:
-            new_user = User(name=name, surname=surname, fatherland=fatherland, contact=contact)
-            session.add(new_user)
+            guest = Guest(name=name, surname=surname, contact=contact)
+            session.add(guest)
             session.commit()
-            print(f"Пользователь {name} добавлен.")
+            print(f"Гость {name} добавлен.")
         except IntegrityError:
             session.rollback()
-            print(f"Ошибка: Пользователь с контактом {contact} уже существует.")
+            print("Ошибка: такой контакт уже существует.")
         except Exception as e:
             session.rollback()
-            print(f"Произошла ошибка: {e}")
+            print(f"Ошибка: {e}")
 
-def add_freedom_time(master_id, condition_val, specific_time=None):
+def add_property(name, address, description=""): # добавление апартоментов
     with SessionLocal() as session:
         try:
-            new_time = Freedom_time(
-                master=master_id, 
-                condition=condition_val,
-                time=specific_time if specific_time else datetime.now()
+            prop = Property(name=name, address=address, description=description)
+            session.add(prop)
+            session.commit()
+            print(f"Объект '{name}' добавлен.")
+        except Exception as e:
+            session.rollback()
+            print(f"Ошибка: {e}")
+
+def add_unit(property_id, title, capacity, price_per_night): # добавление квартиры/апартоментов
+    with SessionLocal() as session:
+        try:
+            unit = Unit(
+                property_id=property_id,
+                title=title,
+                capacity=capacity,
+                price_per_night=price_per_night
             )
-            session.add(new_time)
+            session.add(unit)
             session.commit()
-            print("Запись о времени добавлена.")
+            print(f"Юнит '{title}' добавлен.")
         except Exception as e:
             session.rollback()
-            print(f"Ошибка при добавлении времени: {e}")
+            print(f"Ошибка: {e}")
 
-def add_master(name, surname, fatherland, bio):
+def add_booking(guest_id, unit_id, check_in, check_out): # добавления бронирования 
     with SessionLocal() as session:
         try:
-            new_master = Master(name=name, surname=surname, fatherland=fatherland, bio=bio)
-            session.add(new_master)
+            booking = Booking(
+                guest_id=guest_id,
+                unit_id=unit_id,
+                check_in=check_in,
+                check_out=check_out,
+                status="confirmed"
+            )
+            session.add(booking)
             session.commit()
-            print(f"Мастер {name} добавлен.")
+            print("Бронирование создано.")
         except Exception as e:
             session.rollback()
-            print(f"Произошла ошибка: {e}")
+            print(f"Ошибка при бронировании: {e}")
 
+# создание БД
 if __name__ == "__main__":
     Base.metadata.create_all(engine)
-    
-    add_master("Александр", "Пушкин", "Сергеевич", "Мастер по бакенбардам и классическим стрижкам.")
-    add_master("Виктор", "Цой", "Робертович", "Стригу под 'восьмиклассницу'. Перемены требуют наших глаз.")
-    add_master("Джон", "Уик", "—", "Стригу быстро, чисто, профессионально. Карандаш не использую.")
-    add_freedom_time(master_id, 1, datetime(2026, 4, 25, 10, 0))
-    add_freedom_time(master_id, 2, datetime(2026, 4, 25, 14, 0))
-    add_freedom_time(master_id, 3, datetime(2026, 4, 26, 12, 0))
-
-
  

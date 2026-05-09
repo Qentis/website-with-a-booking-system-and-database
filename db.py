@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from sqlalchemy import create_engine, Column, Integer, DateTime, String, Text, ForeignKey, Date
+from sqlalchemy import create_engine, Column, Integer, DateTime, String, Text, ForeignKey, Date, select, exists
 from sqlalchemy.orm import DeclarativeBase, sessionmaker, relationship
 from sqlalchemy.exc import IntegrityError
 
@@ -38,7 +38,7 @@ class Unit(Base):
     property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
 
     title = Column(String(150), nullable=False)
-    capacity = Column(Integer, nullable=False)
+    capacity = Column(Integer, nullable=False)  
     price_per_night = Column(Integer, nullable=False)
 
     property = relationship("Property", back_populates="units")
@@ -96,7 +96,7 @@ def add_guest(name, surname, contact):
             print("ERROR:", e)
             return None
 
-def add_property(name, address, description="", image=None):
+def add_property(name, address, description="", image=None): 
     with SessionLocal() as session:
         try:
             prop = Property(
@@ -149,6 +149,20 @@ def add_booking(guest_id, unit_id, check_in, check_out): # добавления 
         except Exception as e:
             session.rollback()
             print(f"Ошибка при бронировании: {e}")
+
+def check_booking(session, check_in, check_out, unit_id):
+
+    stmt = select(
+        exists().where(
+            Booking.unit_id == unit_id,
+            Booking.check_in < check_out,
+            Booking.check_out > check_in
+        )
+    )
+
+    is_taken = session.scalar(stmt)
+
+    return not is_taken
 
 # создание БД
 if __name__ == "__main__":

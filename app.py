@@ -3,6 +3,7 @@ from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 import os
 
+
 from db import (
     SessionLocal,
     Unit,
@@ -53,7 +54,7 @@ def book(unit_id):
 
         if guest is None:
             return "Ошибка создания гостя"
-
+        
         add_booking(
             guest_id=guest.id,
             unit_id=unit_id,

@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from sqlalchemy import create_engine, Column, Integer, DateTime, String, Text, ForeignKey, Date, select, exists
 from sqlalchemy.orm import DeclarativeBase, sessionmaker, relationship
 from sqlalchemy.exc import IntegrityError
@@ -131,9 +131,9 @@ def add_booking(guest_id, unit_id, check_in, check_out):
 
     with SessionLocal() as session:
 
-        if not check_booking(session, check_in, check_out, unit_id):
+        if not check_booking(check_in, check_out, unit_id):
             print("Даты заняты")
-            return
+            return 0
 
         try:
             booking = Booking(
@@ -167,6 +167,22 @@ def check_booking(check_in, check_out, unit_id):
         is_taken = session.scalar(stmt)
 
     return not is_taken
+
+def get_free_slots(bookings, days_ahead=30):
+    sorted_bookings = sorted(bookings, key=lambda b: b.check_in)
+    free_slots =[]
+    current_date = date.today()
+    end_date = current_date + timedelta(days=days_ahead)
+    
+    for b in sorted_bookings:
+        if b.check_in > current_date:
+            free_slots.append((current_date, b.check_in - timedelta(days=1)))
+        if b.check_out > current_date:
+            current_date = b.check_out + timedelta(days=1)
+            
+    if current_date < end_date:
+        free_slots.append((current_date, end_date))
+    return free_slots
 
 
 if __name__ == "__main__":

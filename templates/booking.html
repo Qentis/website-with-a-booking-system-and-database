@@ -19,8 +19,24 @@
         <input type="date" name="check_out" class="form-control mb-3">
 
         <button class="btn btn-light w-100">Забронировать</button>
-
+        
     </form>
+        <div class="free-dates mt-2">
+            <small class="text-success">Свободно для бронирования в ближайшее 30 дней:</small>
+                <ul class="free-list">
+                    {% for start, end in free_slots %}
+                        {% if start.strftime('%d.%m.%Y') == end.strftime('%d.%m.%Y') %}
+                            <li>{{ start.strftime('%d.%m.%Y') }}</li>
+                        {% endif %}
+                    {% if start.strftime('%d.%m.%Y') != end.strftime('%d.%m.%Y') %}
+                        <li>{{ start.strftime('%d.%m.%Y') }} — {{ end.strftime('%d.%m.%Y') }}</li>
+                    {% endif %}
+                    {% else %}
+                        <li>Нет свободных дат в ближайшее время.</li>
+                    {% endfor %}
+                </ul>
+</div>
+    
 
 </div>
 

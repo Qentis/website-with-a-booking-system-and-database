@@ -1,7 +1,9 @@
 from flask import Flask, render_template, request, redirect
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
+from datetime import datetime, timedelta
 import os
+
 
 
 from db import (
@@ -12,7 +14,8 @@ from db import (
     add_property,
     add_guest,
     add_booking,
-    add_unit
+    add_unit,
+    get_free_slots
 )
 
 app = Flask(__name__)
@@ -41,30 +44,53 @@ def index():
 @app.route("/book/<int:unit_id>", methods=["GET", "POST"])
 def book(unit_id):
 
+    with SessionLocal() as session:
+            unit = session.query(Unit)\
+                .options(
+                    joinedload(Unit.bookings)
+                    )\
+            .get(unit_id)
+            free_slots = get_free_slots(unit.bookings) 
+
+
     if request.method == "POST":
 
         name = request.form["name"]
         surname = request.form["surname"]
         contact = request.form["contact"]
 
-        check_in = request.form["check_in"]
-        check_out = request.form["check_out"]
+        check_in = datetime.strptime(
+            request.form["check_in"],
+            "%Y-%m-%d"
+        ).date()
 
+        check_out = datetime.strptime(
+            request.form["check_out"],
+            "%Y-%m-%d"
+        ).date()
+        if name is None:
+            return "Нельзя оставлять поле пустым"
+        if surname is None:
+            return "Нельзя оставлять поле пустым"
+        if contact is None:
+            return "Нельзя оставлять поле пустым"
         guest = add_guest(name, surname, contact)
 
         if guest is None:
             return "Ошибка создания гостя"
         
-        add_booking(
+        booking = add_booking(
             guest_id=guest.id,
             unit_id=unit_id,
             check_in=check_in,
             check_out=check_out
         )
+        if guest == 0:
+            return "Даты заняты"
 
         return redirect("/")
 
-    return render_template("booking.html", unit_id=unit_id)
+    return render_template("booking.html", unit_id=unit_id, units=[unit], free_slots=free_slots)
 
 
 @app.route("/add_property", methods=["GET", "POST"])

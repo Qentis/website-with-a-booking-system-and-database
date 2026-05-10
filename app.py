@@ -68,12 +68,7 @@ def book(unit_id):
             request.form["check_out"],
             "%Y-%m-%d"
         ).date()
-        if name is None:
-            return "Нельзя оставлять поле пустым"
-        if surname is None:
-            return "Нельзя оставлять поле пустым"
-        if contact is None:
-            return "Нельзя оставлять поле пустым"
+        
         guest = add_guest(name, surname, contact)
 
         if guest is None:
@@ -95,44 +90,40 @@ def book(unit_id):
 
 @app.route("/add_property", methods=["GET", "POST"])
 def add_property_page():
-
     if request.method == "POST":
-
         name = request.form["name"]
         address = request.form["address"]
         description = request.form["description"]
-
+        
+        # Получаем данные из формы
         type_ = request.form.get("type")
-
         unit_title = request.form.get("unit_title")
         capacity = request.form.get("capacity")
         price = request.form.get("price")
 
         file = request.files.get("image")
-
         filename = None
-
         if file and file.filename != "":
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
 
         prop = add_property(name, address, description, filename)
-
         if prop is None:
             return "Ошибка создания объекта"
-        
         if type_ == "apartment":
-            add_unit(prop.id, "Апартаменты", 2, 50)
+            add_unit(prop.id, "Апартаменты", 2, 50.0)
+        else:
+            try:
+                final_title = unit_title if unit_title else "Standard"
+                
+                final_capacity = int(capacity) if capacity else 2
+                final_price = float(price) if price else 50.0
+                
+                add_unit(prop.id, final_title, final_capacity, final_price)
+                
+            except ValueError:
 
-        elif unit_title and capacity and price:
-            add_unit(prop.id, unit_title, int(capacity), float(price))
-
-        add_unit(
-            prop.id,
-            unit_title or "Standard",
-            int(capacity) if capacity else 2,
-            float(price) if price else 50
-        )
+                return "Ошибка: Вместимость и цена должны быть числами!", 400
 
         return redirect("/")
 

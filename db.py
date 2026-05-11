@@ -28,6 +28,7 @@ class Property(Base):
     description = Column(Text, nullable=True)
     image = Column(String)
     units = relationship("Unit", back_populates="property")
+    owner_email = Column(String)
 
 class Unit(Base):
     __tablename__ = "units"
@@ -90,14 +91,15 @@ def add_guest(name, surname, contact):
             print("Ошибка:", e)
             return None
 
-def add_property(name, address, description="", image=None): 
+def add_property(name, address, description="", image=None, owner_email=""): 
     with SessionLocal() as session:
         try:
             prop = Property(
                 name=name,
                 address=address,
                 description=description,
-                image=image
+                image=image,
+                owner_email=owner_email
             )
             session.add(prop)
             session.commit()

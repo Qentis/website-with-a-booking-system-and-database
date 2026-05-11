@@ -1,43 +1,37 @@
 {% extends "base.html" %}
-
 {% block content %}
 
-<div class="booking-card">
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white p-10 rounded-3xl shadow-sm border border-gray-100">
+        <h3 class="text-3xl font-bold text-gray-900 mb-8">Бронирование</h3>
 
-    <h3 class="mb-3">Бронирование</h3>
+            <form method="POST" class="space-y-5">
+                <div class="grid grid-cols-2 gap-4">
+                    <input name="name" required placeholder="Имя" class="...">
+                    <input name="surname" required placeholder="Фамилия" class="...">
+                </div>
+                <input name="contact" required placeholder="Телефон" class="...">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="date" name="check_in" required class="...">
+                    <input type="date" name="check_out" required class="...">
+                </div>
+                <button type="submit" ...>Подтвердить</button>
+            </form>
 
-    <form method="POST">
-
-        <input name="name" placeholder="Имя" class="form-control mb-2">
-        <input name="surname" placeholder="Фамилия" class="form-control mb-2">
-        <input name="contact" placeholder="Контакт" class="form-control mb-2">
-
-        <label>Заезд</label>
-        <input type="date" name="check_in" class="form-control mb-2">
-
-        <label>Выезд</label>
-        <input type="date" name="check_out" class="form-control mb-3">
-
-        <button class="btn btn-light w-100">Забронировать</button>
-        
-    </form>
-        <div class="free-dates mt-2">
-            <small class="text-success">Свободно для бронирования в ближайшее 30 дней:</small>
-                <ul class="free-list">
-                    {% for start, end in free_slots %}
-                        {% if start.strftime('%d.%m.%Y') == end.strftime('%d.%m.%Y') %}
-                            <li>{{ start.strftime('%d.%m.%Y') }}</li>
-                        {% endif %}
-                    {% if start.strftime('%d.%m.%Y') != end.strftime('%d.%m.%Y') %}
-                        <li>{{ start.strftime('%d.%m.%Y') }} — {{ end.strftime('%d.%m.%Y') }}</li>
-                    {% endif %}
-                    {% else %}
-                        <li>Нет свободных дат в ближайшее время.</li>
-                    {% endfor %}
-                </ul>
-</div>
-    
-
+        <div class="mt-10 pt-8 border-t border-gray-100">
+            <p class="text-sm font-bold text-gray-900 mb-4">Свободные даты (30 дней):</p>
+            <ul class="flex flex-wrap gap-2">
+                {% for start, end in free_slots %}
+                    <li class="date-slot">
+                        {{ start.strftime('%d.%m') }}{% if start != end %} — {{ end.strftime('%d.%m') }}{% endif %}
+                    </li>
+                {% else %}
+                    <li class="text-gray-400 text-sm">Нет свободных дат.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </div>
 
 {% endblock %}

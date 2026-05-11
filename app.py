@@ -1,133 +1,156 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, url_for, session
+from flask_dance.contrib.google import make_google_blueprint, google
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
-from datetime import datetime, timedelta
+from datetime import datetime
+from PIL import Image
 import os
-
-
+from functools import wraps
 
 from db import (
-    SessionLocal,
-    Unit,
-    Property,
-    Guest,
-    add_property,
-    add_guest,
-    add_booking,
-    add_unit,
-    get_free_slots
+    SessionLocal, Unit, Property, Guest,
+    add_property, add_guest, add_booking, add_unit, get_free_slots
 )
 
 app = Flask(__name__)
+@app.context_processor
+def inject_google_status():
+    return dict(google=google)
+app.secret_key = "jkjdkshdh#$f@FEfiguefihHHGkjgk"
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
+blueprint = make_google_blueprint(
+    client_id="5630371250-qbk8f895s7kgsc1931ju0s3v9rlmq595.apps.googleusercontent.com",
+    client_secret="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",
+    scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"],
+    offline=True
+)
+
+app.register_blueprint(blueprint, url_prefix="/login")
 
 UPLOAD_FOLDER = "static/uploads"
-
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-
-from sqlalchemy.orm import joinedload
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not google.authorized:
+            return redirect(url_for("google.login"))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route("/")
 def index():
     with SessionLocal() as session:
-        units = session.query(Unit)\
-            .options(
-                joinedload(Unit.property),
-                joinedload(Unit.bookings)  
-            )\
-            .all()
-
+        units = session.query(Unit).options(joinedload(Unit.property)).all()
     return render_template("index.html", units=units)
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    user_info = google.get("/oauth2/v2/userinfo").json()
+    email = user_info["email"]
+    with SessionLocal() as session:
+        my_props = session.query(Property).filter_by(owner_email=email).all()
+        return render_template("dashboard.html", properties=my_props)
 
 @app.route("/book/<int:unit_id>", methods=["GET", "POST"])
 def book(unit_id):
-
     with SessionLocal() as session:
-            unit = session.query(Unit)\
-                .options(
-                    joinedload(Unit.bookings)
-                    )\
-            .get(unit_id)
-            free_slots = get_free_slots(unit.bookings) 
-
+        unit = session.query(Unit).options(joinedload(Unit.bookings)).get(unit_id)
+        free_slots = get_free_slots(unit.bookings)
 
     if request.method == "POST":
+        name = request.form.get("name")
+        surname = request.form.get("surname")
+        contact = request.form.get("contact")
+        check_in_str = request.form.get("check_in")
+        check_out_str = request.form.get("check_out")
 
-        name = request.form["name"]
-        surname = request.form["surname"]
-        contact = request.form["contact"]
+        if not all([name, surname, contact, check_in_str, check_out_str]):
+            return "Все поля обязательны для заполнения!", 400
 
-        check_in = datetime.strptime(
-            request.form["check_in"],
-            "%Y-%m-%d"
-        ).date()
+        check_in = datetime.strptime(check_in_str, "%Y-%m-%d").date()
+        check_out = datetime.strptime(check_out_str, "%Y-%m-%d").date()
 
-        check_out = datetime.strptime(
-            request.form["check_out"],
-            "%Y-%m-%d"
-        ).date()
-        
+        if check_in >= check_out:
+            return "Дата выезда должна быть позже даты заезда", 400
+
         guest = add_guest(name, surname, contact)
-
-        if guest is None:
-            return "Ошибка создания гостя"
+        booking = add_booking(guest.id, unit_id, check_in, check_out)
         
-        booking = add_booking(
-            guest_id=guest.id,
-            unit_id=unit_id,
-            check_in=check_in,
-            check_out=check_out
-        )
-        if guest == 0:
-            return "Даты заняты"
-
+        if booking == 0:
+            return "Выбранные даты заняты", 400
+            
         return redirect("/")
 
-    return render_template("booking.html", unit_id=unit_id, units=[unit], free_slots=free_slots)
-
+    return render_template("booking.html", units=[unit], free_slots=free_slots)
 
 @app.route("/add_property", methods=["GET", "POST"])
+@login_required
 def add_property_page():
     if request.method == "POST":
+        user_info = google.get("/oauth2/v2/userinfo").json()
+        email = user_info["email"]
+
         name = request.form["name"]
         address = request.form["address"]
         description = request.form["description"]
-        
-        # Получаем данные из формы
         type_ = request.form.get("type")
-        unit_title = request.form.get("unit_title")
-        capacity = request.form.get("capacity")
-        price = request.form.get("price")
+        price = request.form.get("price", 50.0)
+        capacity = request.form.get("capacity", 2)
 
         file = request.files.get("image")
         filename = None
-        if file and file.filename != "":
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-
-        prop = add_property(name, address, description, filename)
-        if prop is None:
-            return "Ошибка создания объекта"
-        if type_ == "apartment":
-            add_unit(prop.id, "Апартаменты", 2, 50.0)
-        else:
-            try:
-                final_title = unit_title if unit_title else "Standard"
+        if file and file.filename:
                 
-                final_capacity = int(capacity) if capacity else 2
-                final_price = float(price) if price else 50.0
-                
-                add_unit(prop.id, final_title, final_capacity, final_price)
-                
-            except ValueError:
+                filename = secure_filename(file.filename)
+                path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                file.save(path)
+                img = Image.open(path)
+                target_width = 800
+                target_height = 500
 
-                return "Ошибка: Вместимость и цена должны быть числами!", 400
+                width, height = img.size
 
-        return redirect("/")
+                target_ratio = target_width / target_height
+                img_ratio = width / height
+
+                if img_ratio > target_ratio:
+                    new_width = int(height * target_ratio)
+
+                    left = (width - new_width) // 2
+                    top = 0
+                    right = left + new_width
+                    bottom = height
+
+                else:
+                    new_height = int(width / target_ratio)
+
+                    left = 0
+                    top = (height - new_height) // 2
+                    right = width
+                    bottom = top + new_height
+
+                img = img.crop((left, top, right, bottom))
+
+                img = img.resize((target_width, target_height))
+
+                img.save(path)
+
+
+        prop = add_property(name, address, description, filename, owner_email=email)
+        add_unit(prop.id, type_, int(capacity), float(price))
+        
+        return redirect("/dashboard")
 
     return render_template("add_property.html")
+
+@app.route("/logout")
+def logout():
+    session.clear() 
+    return redirect(url_for("index"))
 
 
 if __name__ == "__main__":

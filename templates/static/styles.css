@@ -1,86 +1,39 @@
+/* Подключаем премиальный шрифт */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap');
+
 body {
-    background: #0a0c0f;
-    color: #eaeaea;
     font-family: 'Manrope', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: #1a1a1a;
 }
 
-/* NAV */
-.navbar {
-    background: rgba(20, 20, 25, 0.8);
-    backdrop-filter: blur(10px);
+/* Эффект плавного появления при наведении на карточку */
+.unit-card {
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
 }
 
-.logo {
-    font-size: 32px;
-    font-weight: 800;
-    letter-spacing: 2px;
-    color: white;
-    text-transform: uppercase;
+.unit-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
 }
 
-/* CARD */
-.dark-card {
-    background: #181a20;
-    border-radius: 16px;
-    overflow: hidden;
-    transition: 0.3s;
-    border: 1px solid rgba(255,255,255,0.05);
+/* Кастомный стиль для полей ввода, чтобы они выглядели "дорого" */
+input, textarea, select {
+    transition: all 0.2s ease;
+    border: 1px solid #e5e7eb;
 }
 
-.dark-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+input:focus, textarea:focus, select:focus {
+    border-color: #000 !important;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
 }
 
-/* IMAGE */
-.img-box {
-    height: 200px;
-    overflow: hidden;
-}
-
-.img-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: 0.4s;
-}
-
-.dark-card:hover img {
-    transform: scale(1.08);
-}
-
-/* PRICE */
-.price {
-    font-size: 18px;
-    font-weight: 600;
-}
-
-/* BOOKING CARD */
-.booking-card {
-    max-width: 400px;
-    margin: auto;
-    background: #181a20;
-    padding: 25px;
-    border-radius: 15px;
-}
-
-/* INPUT */
-.form-control {
-    background: #111;
-    border: 1px solid #333;
-    color: white;
-}
-
-.form-control:focus {
-    background: #111;
-    color: white;
-    border-color: #666;
-    box-shadow: none;
-}
-
-/* MOBILE */
-@media (max-width: 768px) {
-    .img-box {
-        height: 150px;
-    }
+/* Красивое отображение дат */
+.date-slot {
+    padding: 8px 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #4b5563;
 }

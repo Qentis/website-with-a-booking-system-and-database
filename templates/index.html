@@ -1,71 +1,35 @@
 {% extends "base.html" %}
-
 {% block content %}
-
-<h2 class="mb-4">Премиум жильё</h2>
-
-<div class="row g-4">
-
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
     {% for unit in units %}
-    <div class="col-12 col-md-6 col-lg-4">
-
-        <div class="card dark-card h-100">
-
+    <div class="unit-card bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
+        <div class="h-64 w-full bg-gray-200 overflow-hidden">
             {% if unit.property and unit.property.image %}
-                <img src="{{ url_for('static', filename='uploads/' + unit.property.image) }}">
+                <img src="{{ url_for('static', filename='uploads/' + unit.property.image) }}" class="w-full h-full object-cover">
             {% else %}
-                <img src="https://png.pngtree.com/png-vector/20221125/ourmid/pngtree-no-image-available-icon-flatvector-illustration-photography-no-photo-vector-png-image_40966498.jpg">
+                <div class="w-full h-full flex items-center justify-center text-gray-400 font-medium">Нет фото</div>
             {% endif %}
-
-            <div class="p-3">
-
-                {% if unit.property %}
-                    <span class="badge bg-secondary">
-                        🏨 {{ unit.property.name }}
-                    </span>
-
-                    <p class="text-muted small">
-                        {{ unit.property.address }}
-                    </p>
-                {% else %}
-                    <span class="badge bg-dark">
-                        🏠 Без объекта
-                    </span>
-                {% endif %}
-
-                <h5 class="mt-2">{{ unit.title }}</h5>
-
-                <div class="d-flex justify-content-between">
-                    <span class="text-muted small">
-                        до {{ unit.capacity }} гостей
-                    </span>
-
-                    <span class="price">
-                        {{ unit.price_per_night }}€
-                    </span>
-                </div>
-
-                {% if unit.bookings %}
-                <div class="booked-dates mt-2">
-                    <small class="text-danger">Занято:</small>
-                    <ul class="booking-list">
-                        {% for b in unit.bookings %}
-                            <li>{{ b.check_in }} → {{ b.check_out }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
-
-                <a href="/book/{{ unit.id }}" class="btn btn-sm btn-light w-100 mt-3">
-                    Забронировать
-                </a>
-
-            </div>
         </div>
 
+        <div class="p-6">
+            {% if unit.property %}
+                <div class="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">🏨 {{ unit.property.name }}</div>
+                <p class="text-gray-500 text-sm mb-3 truncate">{{ unit.property.address }}</p>
+            {% endif %}
+
+            <h3 class="text-xl font-bold text-gray-900 mb-6">{{ unit.title }}</h3>
+
+            <div class="flex justify-between items-center border-t border-gray-100 pt-5">
+                <span class="text-sm font-medium text-gray-500">{{ unit.capacity }} гостей</span>
+                <span class="text-2xl font-extrabold text-gray-900">{{ unit.price_per_night }}€</span>
+            </div>
+
+            <a href="/book/{{ unit.id }}" class="block w-full text-center bg-gray-50 text-gray-900 py-4 mt-6 rounded-2xl font-bold hover:bg-gray-900 hover:text-white transition-all">
+                Забронировать
+            </a>
+        </div>
     </div>
     {% endfor %}
-
 </div>
 
 {% endblock %}

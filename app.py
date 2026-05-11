@@ -6,6 +6,7 @@ from datetime import datetime
 from PIL import Image
 import os
 from functools import wraps
+from dotenv import load_dotenv
 
 from db import (
     SessionLocal, Unit, Property, Guest,
@@ -16,12 +17,13 @@ app = Flask(__name__)
 @app.context_processor
 def inject_google_status():
     return dict(google=google)
-app.secret_key = "jkjdkshdh#$f@FEfiguefihHHGkjgk"
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
+app.secret_key = os.environ.get("FLASK_SECRET_KEY")
+
 blueprint = make_google_blueprint(
-    client_id="5630371250-qbk8f895s7kgsc1931ju0s3v9rlmq595.apps.googleusercontent.com",
-    client_secret="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",
+    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
     scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"],
     offline=True
 )
@@ -138,6 +140,7 @@ def add_property_page():
                 img = img.resize((target_width, target_height))
 
                 img.save(path)
+
 
 
         prop = add_property(name, address, description, filename, owner_email=email)

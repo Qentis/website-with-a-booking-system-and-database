@@ -7,19 +7,19 @@ from PIL import Image
 import os
 from functools import wraps
 from dotenv import load_dotenv
-
 from db import (
     SessionLocal, Unit, Property, Guest,
-    add_property, add_guest, add_booking, add_unit, get_free_slots
+    add_property, add_guest, add_booking, add_unit, get_free_slots, delete
 )
 
+os.environ["NO_PROXY"] = "127.0.0.1,localhost"
 app = Flask(__name__)
+
+app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 @app.context_processor
 def inject_google_status():
     return dict(google=google)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-
-app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 
 blueprint = make_google_blueprint(
     client_id=os.environ.get("GOOGLE_CLIENT_ID"),
@@ -48,14 +48,18 @@ def index():
         units = session.query(Unit).options(joinedload(Unit.property)).all()
     return render_template("index.html", units=units)
 
-@app.route("/dashboard")
+@app.route("/dashboard", methods=["GET", "POST"])
 @login_required
 def dashboard():
+    if request.method == "POST":
+        print(request.form.get("butto"))
     user_info = google.get("/oauth2/v2/userinfo").json()
     email = user_info["email"]
     with SessionLocal() as session:
         my_props = session.query(Property).filter_by(owner_email=email).all()
         return render_template("dashboard.html", properties=my_props)
+
+        
 
 @app.route("/book/<int:unit_id>", methods=["GET", "POST"])
 def book(unit_id):

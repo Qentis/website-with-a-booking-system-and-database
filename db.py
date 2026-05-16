@@ -186,6 +186,12 @@ def get_free_slots(bookings, days_ahead=30):
         free_slots.append((current_date, end_date))
     return free_slots
 
+def delete(id_property):
+    delete_property = session.query(Property).filter_by(id=id_property).first()
+    delete_unit = session.query(Unit).filter_by(id_property=id_property).first()
+    session.delete(delete_property,delete_unit)
+    session.commit()
+
 
 if __name__ == "__main__":
     Base.metadata.create_all(engine)

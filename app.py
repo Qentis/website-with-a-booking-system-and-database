@@ -52,7 +52,8 @@ def index():
 @login_required
 def dashboard():
     if request.method == "POST":
-        print(request.form.get("butto"))
+        property_id = request.form.get("property_id")
+        delete(property_id)
     user_info = google.get("/oauth2/v2/userinfo").json()
     email = user_info["email"]
     with SessionLocal() as session:

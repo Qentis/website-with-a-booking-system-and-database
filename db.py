@@ -2,6 +2,7 @@ from datetime import datetime, date, timedelta
 from sqlalchemy import create_engine, Column, Integer, DateTime, String, Text, ForeignKey, Date, select, exists
 from sqlalchemy.orm import DeclarativeBase, sessionmaker, relationship
 from sqlalchemy.exc import IntegrityError
+import os
 
 
 engine = create_engine("sqlite:///booking.db", echo=True)
@@ -187,10 +188,16 @@ def get_free_slots(bookings, days_ahead=30):
     return free_slots
 
 def delete(id_property):
-    delete_property = session.query(Property).filter_by(id=id_property).first()
-    delete_unit = session.query(Unit).filter_by(id_property=id_property).first()
-    session.delete(delete_property,delete_unit)
-    session.commit()
+    with SessionLocal() as session:
+        property = session.query(Property).filter_by(id=id_property).first()
+        unit = session.query(Unit).filter_by(property_id=id_property).first()
+        if unit:
+            session.delete(unit)
+        if property:
+            image = property.image
+            os.remove(f"static/uploads/{image}")
+            session.delete(property)
+        session.commit()
 
 
 if __name__ == "__main__":
